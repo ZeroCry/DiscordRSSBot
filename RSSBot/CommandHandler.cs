@@ -109,7 +109,7 @@ namespace RSSBot
                             var channel = guild.GetChannel(feed.ChannelId);
 
                             var feedItems = (await Index(feed.RssUrl)).Where(x =>
-                                x.PublishDate + TimeSpan.FromMinutes(10) > DateTime.UtcNow);
+                                x.PublishDate.ToUniversalTime() + TimeSpan.FromMinutes(10) > DateTime.UtcNow);
 
                             if (feed.Embed)
                             {

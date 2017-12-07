@@ -9,8 +9,10 @@ using static RSSBot.CommandHandler;
 
 namespace RSSBot
 {
+    [RequireContext(ContextType.Guild)]
     public class Commands : ModuleBase
     {
+
         private readonly CommandService _service;
 
         public Commands(CommandService service)
@@ -46,6 +48,23 @@ namespace RSSBot
             await ReplyAsync("", false, embed.Build());
         }
 
+        [Command("invite")]
+        [Summary("invite")]
+        [Remarks("Bot Invite Link")]
+        public async Task Invite()
+        {
+            var embed = new EmbedBuilder
+            {
+                Color = Color.Blue
+            };
+            var application = await Context.Client.GetApplicationInfoAsync();
+            embed.AddField($"{Context.Client.CurrentUser.Username} Invite",
+                $"Invite: https://discordapp.com/oauth2/authorize?client_id={application.Id}&scope=bot&permissions=2146958591" +
+                "\nAlso Please consider supporting this project on patreon: https://www.patreon.com/passivebot");
+
+            await ReplyAsync("", false, embed.Build());
+        }
+
         [Command("FeedInfo")]
         [Summary("FeedInfo")]
         [Remarks("Information about the current servers feed")]
@@ -73,7 +92,7 @@ namespace RSSBot
                 Color = Color.Blue
             });
         }
-
+        [RequireUserPermission(GuildPermission.Administrator)]
         [Command("SetRssURL")]
         [Summary("SetRssURL <url>")]
         [Remarks("Set the current rss feed URL")]
@@ -100,7 +119,7 @@ namespace RSSBot
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
             }
         }
-
+        [RequireUserPermission(GuildPermission.Administrator)]
         [Command("SetRssChannel")]
         [Summary("SetRssChannel")]
         [Remarks("Set the current channel to post in")]
@@ -126,7 +145,7 @@ namespace RSSBot
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
             }
         }
-
+        [RequireUserPermission(GuildPermission.Administrator)]
         [Command("SetFormatting")]
         [Summary("SetFormatting <text>")]
         [Remarks("Set Rss Post Formatting")]
@@ -145,8 +164,14 @@ namespace RSSBot
                 var feeds = JsonConvert.SerializeObject(RssFeeds);
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
             }
-        }
 
+            await ReplyAsync("", false, new EmbedBuilder
+            {
+                Description = $"Formatting has been saved.",
+                Color = Color.Blue
+            });
+        }
+        [RequireUserPermission(GuildPermission.Administrator)]
         [Command("ToggleRss")]
         [Summary("ToggleRss")]
         [Remarks("Toggle The Rss Feed Poster On or Off")]
@@ -165,8 +190,14 @@ namespace RSSBot
                 var feeds = JsonConvert.SerializeObject(RssFeeds);
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
             }
-        }
 
+            await ReplyAsync("", false, new EmbedBuilder
+            {
+                Description = $"Feed Running Status is now: {server.Running}",
+                Color = Color.Blue
+            });
+        }
+        [RequireUserPermission(GuildPermission.Administrator)]
         [Command("Formatting")]
         [Summary("Formatting")]
         [Remarks("See Formatting Tags")]
@@ -186,7 +217,7 @@ namespace RSSBot
             });
         }
 
-
+        [RequireUserPermission(GuildPermission.Administrator)]
         [Command("initialise")]
         [Summary("initialise")]
         [Remarks("Initialise the server for the RSS Reader")]
