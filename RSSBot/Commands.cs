@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -115,7 +116,7 @@ namespace RSSBot
 
             if (RssFeeds != null)
             {
-                var feeds = JsonConvert.SerializeObject(RssFeeds);
+                var feeds = JsonConvert.SerializeObject(RssFeeds, Newtonsoft.Json.Formatting.Indented);
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
             }
         }
@@ -141,7 +142,7 @@ namespace RSSBot
 
             if (RssFeeds != null)
             {
-                var feeds = JsonConvert.SerializeObject(RssFeeds);
+                var feeds = JsonConvert.SerializeObject(RssFeeds, Newtonsoft.Json.Formatting.Indented);
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
             }
         }
@@ -161,7 +162,7 @@ namespace RSSBot
 
             if (RssFeeds != null)
             {
-                var feeds = JsonConvert.SerializeObject(RssFeeds);
+                var feeds = JsonConvert.SerializeObject(RssFeeds, Newtonsoft.Json.Formatting.Indented);
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
             }
 
@@ -187,7 +188,7 @@ namespace RSSBot
 
             if (RssFeeds != null)
             {
-                var feeds = JsonConvert.SerializeObject(RssFeeds);
+                var feeds = JsonConvert.SerializeObject(RssFeeds, Newtonsoft.Json.Formatting.Indented);
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
             }
 
@@ -214,6 +215,92 @@ namespace RSSBot
                               "`$rssurl` - Replaced with the original RSS Url ie. https://passivenation.com/syndication.php \n\n" +
                               "NOTE: If you can also do `[Words]($postlink)` to convert a url into a hyperlink\n" +
                               "Also these must be lowercase to work"
+            });
+        }
+
+        [RequireUserPermission(GuildPermission.Administrator)]
+        [Command("BlacklistAdd")]
+        [Summary("BlacklistAdd <word/phrase>")]
+        [Remarks("Blacklist a specific word or phrase so that it doesn't get posted (Case Insensitive)")]
+        public async Task Badd(string input)
+        {
+            var server = RssFeeds.FirstOrDefault(x => x.GuildId == Context.Guild.Id);
+            if (server == null)
+            {
+                await Initialise();
+                return;
+            }
+
+            server.BlacklistedWords.Add(input);
+
+            if (RssFeeds != null)
+            {
+                var feeds = JsonConvert.SerializeObject(RssFeeds, Newtonsoft.Json.Formatting.Indented);
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
+            }
+
+            await ReplyAsync("", false, new EmbedBuilder
+            {
+                Description = $"**Blacklisted Words/Phrases:** \n" +
+                              $"{string.Join(", ", server.BlacklistedWords)}",
+                Color = Color.Blue
+            });
+        }
+
+        [RequireUserPermission(GuildPermission.Administrator)]
+        [Command("BlacklistDel")]
+        [Summary("BlacklistDel <word/phrase>")]
+        [Remarks("Remove a blacklisted word/phrase from the Blacklist (Case Sensitive)")]
+        public async Task Bdel(string input)
+        {
+            var server = RssFeeds.FirstOrDefault(x => x.GuildId == Context.Guild.Id);
+            if (server == null)
+            {
+                await Initialise();
+                return;
+            }
+
+            server.BlacklistedWords.Remove(input);
+
+            if (RssFeeds != null)
+            {
+                var feeds = JsonConvert.SerializeObject(RssFeeds, Newtonsoft.Json.Formatting.Indented);
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
+            }
+
+            await ReplyAsync("", false, new EmbedBuilder
+            {
+                Description = $"**Blacklisted Words/Phrases:** \n" +
+                              $"{string.Join(", ", server.BlacklistedWords)}",
+                Color = Color.Blue
+            });
+        }
+
+        [RequireUserPermission(GuildPermission.Administrator)]
+        [Command("ToggleDuplicates")]
+        [Summary("ToggleDuplicates")]
+        [Remarks("Toggle weather duplicate posts get removed or not. ()")]
+        public async Task Dupe()
+        {
+            var server = RssFeeds.FirstOrDefault(x => x.GuildId == Context.Guild.Id);
+            if (server == null)
+            {
+                await Initialise();
+                return;
+            }
+
+            server.RemoveDuplicates = !server.RemoveDuplicates;
+
+            if (RssFeeds != null)
+            {
+                var feeds = JsonConvert.SerializeObject(RssFeeds, Newtonsoft.Json.Formatting.Indented);
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
+            }
+
+            await ReplyAsync("", false, new EmbedBuilder
+            {
+                Description = $"Duplicates are removed: {server.RemoveDuplicates}",
+                Color = Color.Blue
             });
         }
 
@@ -253,7 +340,7 @@ namespace RSSBot
 
             if (RssFeeds != null)
             {
-                var feeds = JsonConvert.SerializeObject(RssFeeds);
+                var feeds = JsonConvert.SerializeObject(RssFeeds, Newtonsoft.Json.Formatting.Indented);
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
             }
         }
@@ -271,5 +358,9 @@ namespace RSSBot
 
         public string RssUrl { get; set; }
         public bool Embed { get; set; } = true;
+
+        public bool RemoveDuplicates { get; set; } = true;
+        public List<string> BlacklistedWords { get; set; } = new List<string>();
+        public List<string> PostList { get; set; } = new List<string>();
     }
 }

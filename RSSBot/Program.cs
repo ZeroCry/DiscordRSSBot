@@ -21,7 +21,7 @@ namespace RSSBot
 
         public async Task Start()
         {
-            Console.Title = "Discord Bot Base By PassiveModding";
+            Console.Title = "Discord RSS Bot By PassiveModding";
 
 
             if (!Directory.Exists(Path.Combine(AppContext.BaseDirectory, "setup/")))

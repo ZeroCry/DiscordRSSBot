@@ -21,6 +21,7 @@ namespace RSSBot
     public class CommandHandler
     {
         public static List<RssObject> RssFeeds = new List<RssObject>();
+
         public static int Messages;
         public static int Commands;
         private readonly DiscordSocketClient _client;
@@ -48,7 +49,7 @@ namespace RSSBot
             }
             if (RssFeeds != null)
             {
-                var feeds = JsonConvert.SerializeObject(RssFeeds);
+                var feeds = JsonConvert.SerializeObject(RssFeeds, Formatting.Indented);
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
             }
 
@@ -106,6 +107,7 @@ namespace RSSBot
                         if (feed.Running)
                         {
                             var guild = _client.GetGuild(feed.GuildId);
+                            Logger.LogInfo($"{guild.Name} Checking RSS");
                             var channel = guild.GetChannel(feed.ChannelId);
 
                             var feedItems = (await Index(feed.RssUrl)).Where(x =>
@@ -116,6 +118,18 @@ namespace RSSBot
                                 var i = 0;
                                 foreach (var item in feedItems)
                                 {
+                                    if (feed.PostList.Any(x =>
+                                            string.Equals(x, item.Title, StringComparison.CurrentCultureIgnoreCase)) && feed.RemoveDuplicates)
+                                    {
+                                        Logger.LogInfo($"DUPE IGNORED: {item.Title}");
+                                        return;
+                                    }
+                                    if (feed.BlacklistedWords.Any(x => string.Equals(x, item.Title, StringComparison.CurrentCultureIgnoreCase)))
+                                    {
+                                        Logger.LogInfo($"BLACKLIST IGNORED: {item.Title}");
+                                        return;
+                                    }
+
                                     var desc = Regex.Replace(item.Content, "<.*?>", "");
                                     var d2 = feed.Formatting
                                         .Replace("$posttitle", item.Title)
@@ -135,19 +149,32 @@ namespace RSSBot
                                         }
                                     }.Build());
 
+                                    feed.PostList.Add(item.Title);
+                                    Logger.LogInfo($"{guild.Name} => {item.Title}");
+                                    if (RssFeeds != null)
+                                    {
+                                        var feeds = JsonConvert.SerializeObject(RssFeeds, Formatting.Indented);
+                                        File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"), feeds);
+                                    }
+
                                     await Task.Delay(1000);
                                     i++;
                                     if (i >= 10)
                                         return;
                                 }
                             }
+                            Logger.LogInfo($"{guild.Name} Complete");
                         }
                     }
                     catch (Exception e)
                     {
                         Console.WriteLine(e);
                     }
-
+                if (File.Exists(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json")))
+                {
+                    var feedobj = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "setup/RSS.json"));
+                    RssFeeds = JsonConvert.DeserializeObject<List<RssObject>>(feedobj);
+                }
                 await Task.Delay(1000 * 60 * 10);
             }
         }
